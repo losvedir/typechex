@@ -1,0 +1,66 @@
+use crate::parser::ast;
+use crate::parser::lexer;
+
+grammar;
+
+pub Expr: ast::Expr = {
+    List,
+    Tuple,
+    Literal
+}
+
+Tuple: ast::Expr = {
+    "{" <es:(<Expr> ",")*> <e:Expr?> "}" => {
+        let mut es = es;
+        if let Some(e) = e {
+            es.push(e);
+        };
+        ast::Expr::Tuple{exprs: es}
+    }
+}
+
+List: ast::Expr = {
+    "[" <es:(<ExprOrSugarTuple> ",")*> <e:ExprOrSugarTuple?> "]" => {
+        let mut es = es;
+        if let Some(e) = e {
+            es.push(e);
+        };
+        ast::Expr::List{exprs: es}
+    }
+}
+
+ExprOrSugarTuple: ast::Expr = {
+    Expr,
+    <a:"quoted"> ":" <e:Expr> => ast::Expr::Tuple {exprs: vec![ast::Expr::Atom(a.to_string()), e]},
+    <a:"unquoted"> ":" <e:Expr> => ast::Expr::Tuple {exprs: vec![ast::Expr::Atom(a.to_string()), e]}
+}
+
+Literal: ast::Expr = {
+    "true" => ast::Expr::Atom("true".to_string()),
+    "false" => ast::Expr::Atom("false".to_string()),
+    "nil" => ast::Expr::Atom("nil".to_string()),
+    "number" => ast::Expr::Number(<>),
+    ":" <"quoted"> => ast::Expr::Atom(<>),
+    ":" <"unquoted"> => ast::Expr::Atom(<>),
+    "quoted" => ast::Expr::Binary(<>)
+}
+
+extern {
+    type Location = usize;
+    type Error = lexer::LexicalError;
+
+    enum lexer::Tok {
+        "{" => lexer::Tok::LCurly,
+        "}" => lexer::Tok::RCurly,
+        "[" => lexer::Tok::LBrace,
+        "]" => lexer::Tok::RBrace,
+        "," => lexer::Tok::Comma,
+        ":" => lexer::Tok::Colon,
+        "number" => lexer::Tok::Number(<f64>),
+        "quoted" => lexer::Tok::Quoted(<String>),
+        "unquoted" => lexer::Tok::Unquoted(<String>),
+        "nil" => lexer::Tok::Nil,
+        "true" => lexer::Tok::True,
+        "false" => lexer::Tok::False
+    }
+}

@@ -1,6 +1,6 @@
 use std::str::Chars;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Tok {
     LCurly,
     RCurly,
@@ -11,6 +11,9 @@ pub enum Tok {
     Number(f64),
     Quoted(String),
     Unquoted(String),
+    Nil,
+    True,
+    False,
 }
 
 #[derive(Debug, PartialEq)]
@@ -125,7 +128,15 @@ impl<'input> Iterator for Lexer<'input> {
                     self.shift();
                 }
                 let s: String = cs.iter().collect();
-                return Some(Ok((i0, Tok::Unquoted(s), self.i)));
+
+                let token = match s.as_ref() {
+                    "nil" => Tok::Nil,
+                    "true" => Tok::True,
+                    "false" => Tok::False,
+                    _ => Tok::Unquoted(s),
+                };
+
+                return Some(Ok((i0, token, self.i)));
             }
 
             self.shift();
