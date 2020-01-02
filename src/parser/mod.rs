@@ -14,7 +14,7 @@ pub fn parse_file(filename: &str) -> Result<ast::Expr, Error> {
 
 fn quote_file(filename: &str) -> Result<String, Error> {
     let elixir_code = format!(
-        "\"{}\" |> File.read!() |> Code.string_to_quoted!() |> IO.inspect()",
+        "\"{}\" |> File.read!() |> Code.string_to_quoted!() |> IO.inspect(limit: :infinity)",
         filename
     );
 
