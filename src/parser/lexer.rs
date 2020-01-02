@@ -145,7 +145,13 @@ impl<'input> Iterator for Lexer<'input> {
 }
 
 fn is_unquoted(c: &char) -> bool {
-    c.is_alphanumeric() || *c == '_' || *c == '@' || *c == '!' || *c == '?'
+    c.is_alphanumeric()
+        || *c == '_'
+        || *c == '@'
+        || *c == '!'
+        || *c == '?'
+        || *c == '='
+        || *c == '.'
 }
 
 #[test]

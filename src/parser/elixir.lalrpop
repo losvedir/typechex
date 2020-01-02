@@ -40,6 +40,8 @@ Literal: ast::Expr = {
     "false" => ast::Expr::Atom("false".to_string()),
     "nil" => ast::Expr::Atom("nil".to_string()),
     "number" => ast::Expr::Number(<>),
+    // Possible atom, but lexer has issues with it for now
+    ":" "{" "}" => ast::Expr::Atom("{}".to_string()),
     ":" <"quoted"> => ast::Expr::Atom(<>),
     ":" <"unquoted"> => ast::Expr::Atom(<>),
     "quoted" => ast::Expr::Binary(<>)
