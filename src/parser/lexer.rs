@@ -23,6 +23,9 @@ pub type Spanned<Tok, Loc, Error> = Result<(Loc, Tok, Loc), Error>;
 pub struct Lexer<'input> {
     c0: Option<char>,
     c1: Option<char>,
+    c2: Option<char>,
+    c3: Option<char>,
+    c4: Option<char>,
     i: usize,
     chars: Chars<'input>,
 }
@@ -32,9 +35,16 @@ impl<'input> Lexer<'input> {
         let mut chars = input.chars();
         let c0 = chars.next();
         let c1 = chars.next();
+        let c2 = chars.next();
+        let c3 = chars.next();
+        let c4 = chars.next();
+
         Lexer {
             c0: c0,
             c1: c1,
+            c2: c2,
+            c3: c3,
+            c4: c4,
             i: 0,
             chars: chars,
         }
@@ -43,7 +53,10 @@ impl<'input> Lexer<'input> {
     pub fn shift(&mut self) {
         let c = self.chars.next();
         self.c0 = self.c1;
-        self.c1 = c;
+        self.c1 = self.c2;
+        self.c2 = self.c3;
+        self.c3 = self.c4;
+        self.c4 = c;
         self.i += 1;
     }
 }
@@ -55,6 +68,12 @@ impl<'input> Iterator for Lexer<'input> {
         loop {
             if self.c0 == None {
                 return None;
+            }
+            if self.c0 == Some('%') && self.c1 == Some('{') && self.c2 == Some('}') {
+                for _ in 0..3 {
+                    self.shift();
+                }
+                return Some(Ok((self.i - 3, Tok::Unquoted("%{}".to_string()), self.i)));
             }
             if self.c0 == Some('{') {
                 self.shift();
@@ -156,6 +175,8 @@ fn is_unquoted(c: &char) -> bool {
         || *c == '<'
         || *c == '>'
         || *c == '-'
+        || *c == '%'
+        || *c == '.'
 }
 
 #[test]
