@@ -179,6 +179,7 @@ fn is_unquoted(c: &char) -> bool {
         || *c == '-'
         || *c == '%'
         || *c == '.'
+        || *c == '&'
 }
 
 #[test]

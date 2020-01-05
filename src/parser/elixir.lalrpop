@@ -32,13 +32,20 @@ List: ast::Expr = {
 ExprOrSugarTuple: ast::Expr = {
     Expr,
     <a:"quoted"> ":" <e:Expr> => ast::Expr::Tuple {exprs: vec![ast::Expr::Atom(a.to_string()), e]},
-    <a:"unquoted"> ":" <e:Expr> => ast::Expr::Tuple {exprs: vec![ast::Expr::Atom(a.to_string()), e]}
+    <a:"unquoted"> ":" <e:Expr> => ast::Expr::Tuple {exprs: vec![ast::Expr::Atom(a.to_string()), e]},
+    "true" ":" <e:Expr> => ast::Expr::Tuple {exprs: vec![ast::Expr::Atom("true".to_string()), e]},
+    "false" ":" <e:Expr> => ast::Expr::Tuple {exprs: vec![ast::Expr::Atom("false".to_string()), e]},
+    "nil" ":" <e:Expr> => ast::Expr::Tuple {exprs: vec![ast::Expr::Atom("nil".to_string()), e]},
+    "Access" ":" <e:Expr> => ast::Expr::Tuple {exprs: vec![ast::Expr::Atom("Access".to_string()), e]},
 }
 
 Literal: ast::Expr = {
     "true" => ast::Expr::Atom("true".to_string()),
+    ":" "true" => ast::Expr::Atom("true".to_string()),
     "false" => ast::Expr::Atom("false".to_string()),
+    ":" "false" => ast::Expr::Atom("false".to_string()),
     "nil" => ast::Expr::Atom("nil".to_string()),
+    ":" "nil" => ast::Expr::Atom("nil".to_string()),
     "number" => ast::Expr::Number(<>),
     // Possible atom, but lexer has issues with it for now
     ":" "{" "}" => ast::Expr::Atom("{}".to_string()),
@@ -46,6 +53,7 @@ Literal: ast::Expr = {
     ":" <"unquoted"> => ast::Expr::Atom(<>),
     "quoted" => ast::Expr::Binary(<>),
     "Access" => ast::Expr::Atom("Access".to_string()),
+    ":" "Access" => ast::Expr::Atom("Access".to_string()),
 }
 
 extern {
