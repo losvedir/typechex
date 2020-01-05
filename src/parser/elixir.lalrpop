@@ -37,6 +37,7 @@ ExprOrSugarTuple: ast::Expr = {
     "false" ":" <e:Expr> => ast::Expr::Tuple {exprs: vec![ast::Expr::Atom("false".to_string()), e]},
     "nil" ":" <e:Expr> => ast::Expr::Tuple {exprs: vec![ast::Expr::Atom("nil".to_string()), e]},
     "Access" ":" <e:Expr> => ast::Expr::Tuple {exprs: vec![ast::Expr::Atom("Access".to_string()), e]},
+    "Kernel" ":" <e:Expr> => ast::Expr::Tuple {exprs: vec![ast::Expr::Atom("Kernel".to_string()), e]},
 }
 
 Literal: ast::Expr = {
@@ -54,6 +55,8 @@ Literal: ast::Expr = {
     "quoted" => ast::Expr::Binary(<>),
     "Access" => ast::Expr::Atom("Access".to_string()),
     ":" "Access" => ast::Expr::Atom("Access".to_string()),
+    "Kernel" => ast::Expr::Atom("Kernel".to_string()),
+    ":" "Kernel" => ast::Expr::Atom("Kernel".to_string()),
 }
 
 extern {
@@ -74,5 +77,6 @@ extern {
         "true" => lexer::Tok::True,
         "false" => lexer::Tok::False,
         "Access" => lexer::Tok::Access,
+        "Kernel" => lexer::Tok::Kernel,
     }
 }
