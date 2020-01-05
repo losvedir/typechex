@@ -44,7 +44,8 @@ Literal: ast::Expr = {
     ":" "{" "}" => ast::Expr::Atom("{}".to_string()),
     ":" <"quoted"> => ast::Expr::Atom(<>),
     ":" <"unquoted"> => ast::Expr::Atom(<>),
-    "quoted" => ast::Expr::Binary(<>)
+    "quoted" => ast::Expr::Binary(<>),
+    "Access" => ast::Expr::Atom("Access".to_string()),
 }
 
 extern {
@@ -63,6 +64,7 @@ extern {
         "unquoted" => lexer::Tok::Unquoted(<String>),
         "nil" => lexer::Tok::Nil,
         "true" => lexer::Tok::True,
-        "false" => lexer::Tok::False
+        "false" => lexer::Tok::False,
+        "Access" => lexer::Tok::Access,
     }
 }

@@ -14,6 +14,7 @@ pub enum Tok {
     Nil,
     True,
     False,
+    Access,
 }
 
 #[derive(Debug, PartialEq)]
@@ -152,6 +153,7 @@ impl<'input> Iterator for Lexer<'input> {
                     "nil" => Tok::Nil,
                     "true" => Tok::True,
                     "false" => Tok::False,
+                    "Access" => Tok::Access,
                     _ => Tok::Unquoted(s),
                 };
 
