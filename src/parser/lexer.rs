@@ -130,10 +130,21 @@ impl<'input> Iterator for Lexer<'input> {
                 let mut cs: Vec<char> = vec![];
                 self.shift();
                 // TODO: Handle escaped quotes
-                while self.c0 != Some('"') {
-                    cs.push(self.c0.unwrap());
-                    self.shift();
+                loop {
+                    if self.c0 == None {
+                        break;
+                    } else if self.c0 == Some('"') {
+                        break;
+                    } else if self.c0 == Some('\\') && self.c1 == Some('"') {
+                        self.shift();
+                        cs.push(self.c0.unwrap());
+                        self.shift();
+                    } else {
+                        cs.push(self.c0.unwrap());
+                        self.shift();
+                    }
                 }
+
                 self.shift();
                 let s: String = cs.iter().collect();
                 return Some(Ok((i0, Tok::Quoted(s), self.i)));
@@ -184,6 +195,11 @@ fn is_unquoted(c: &char) -> bool {
         || *c == '&'
         || *c == '+'
         || *c == '*'
+        || *c == '\\'
+        || *c == '/'
+        || *c == '^'
+        || *c == '#'
+        || *c == '$'
 }
 
 #[test]
@@ -205,4 +221,13 @@ fn test_lexer() {
         Some(Ok((12, Tok::Quoted("bar".to_string()), 17)))
     );
     assert_eq!(lex.next(), Some(Ok((17, Tok::RBrace, 18))));
+}
+
+#[test]
+fn test_escaped_quotes() {
+    let mut lex: Lexer = Lexer::new("\"this \\\"is\\\" a string\"");
+    assert_eq!(
+        lex.next(),
+        Some(Ok((0, Tok::Quoted("this \"is\" a string".to_string()), 22)))
+    )
 }

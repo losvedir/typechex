@@ -3,6 +3,10 @@ use crate::parser::lexer;
 
 grammar;
 
+pub Top: Vec<ast::Expr> = {
+    <Expr*>
+}
+
 pub Expr: ast::Expr = {
     List,
     Tuple,
