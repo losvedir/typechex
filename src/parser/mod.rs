@@ -19,7 +19,10 @@ pub fn parse_file(filename: &str) {
         let parser = elixir::TopParser::new();
 
         match parser.parse(lexer) {
-            Ok(_) => println!("Ok!"),
+            Ok(exp) => {
+                dbg!(&exp);
+                println!("Ok!")
+            }
             Err(e) => {
                 dbg!(&parts[1]);
                 dbg!(e);

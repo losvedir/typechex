@@ -10,7 +10,8 @@ pub Top: Vec<ast::Expr> = {
 pub Expr: ast::Expr = {
     List,
     Tuple,
-    Literal
+    Literal,
+    "{" ":" "defmodule" "," List "," <Expr*> "}" => ast::Expr::Defmodule {exprs: <>}
 }
 
 Tuple: ast::Expr = {
@@ -82,5 +83,6 @@ extern {
         "false" => lexer::Tok::False,
         "Access" => lexer::Tok::Access,
         "Kernel" => lexer::Tok::Kernel,
+        "defmodule" => lexer::Tok::Defmodule,
     }
 }

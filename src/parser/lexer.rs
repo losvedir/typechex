@@ -16,6 +16,7 @@ pub enum Tok {
     False,
     Access,
     Kernel,
+    Defmodule,
 }
 
 #[derive(Debug, PartialEq)]
@@ -167,6 +168,7 @@ impl<'input> Iterator for Lexer<'input> {
                     "false" => Tok::False,
                     "Access" => Tok::Access,
                     "Kernel" => Tok::Kernel,
+                    "defmodule" => Tok::Defmodule,
                     _ => Tok::Unquoted(s),
                 };
 

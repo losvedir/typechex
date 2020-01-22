@@ -5,4 +5,5 @@ pub enum Expr {
     Atom(String),
     Binary(String),
     Number(f64),
+    Defmodule { exprs: Vec<Expr> },
 }
