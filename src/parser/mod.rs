@@ -14,12 +14,10 @@ pub struct ElixirParser;
 
 fn parse_quoted(quoted: &str) -> Result<(), ()> {
     match ElixirParser::parse(Rule::file, quoted) {
-        Ok(res) => {
-            dbg!(&res);
-            Ok(())
-        }
+        Ok(_res) => Ok(()),
         Err(e) => {
             dbg!(&e);
+            dbg!(&quoted);
             Err(())
         }
     }
@@ -36,13 +34,8 @@ pub fn parse_files(filename: &str) {
         println!("{}", parts[0]);
 
         match parse_quoted(parts[1]) {
-            Ok(exp) => {
-                dbg!(&exp);
-                println!("Ok!")
-            }
-            Err(e) => {
-                dbg!(&parts[1]);
-                dbg!(e);
+            Ok(_exp) => println!("Ok!"),
+            Err(_e) => {
                 break;
             }
         }
@@ -160,6 +153,16 @@ fn test_atoms3() {
 }
 
 #[test]
+fn test_atoms4() {
+    let parsed = ElixirParser::parse(Rule::atom, ":%{}")
+        .expect("Parse error")
+        .next()
+        .unwrap();
+    assert_eq!(parsed.as_rule(), Rule::atom);
+    assert_eq!(parsed.as_str(), ":%{}")
+}
+
+#[test]
 fn test_list_empty() {
     let quoted = quote_string("[]").expect("Quote error");
     let parsed = ElixirParser::parse(Rule::list, &quoted)
@@ -197,6 +200,18 @@ fn test_list_multiple_elements() {
 }
 
 #[test]
+fn test_list_sugar_tuples() {
+    let parsed = ElixirParser::parse(Rule::list, "[foo: 5]")
+        .expect("Parse error")
+        .next()
+        .unwrap();
+    assert_eq!(parsed.as_rule(), Rule::list);
+    assert_eq!(parsed.as_str(), "[foo: 5]");
+    let mut inner = parsed.into_inner();
+    assert_eq!(inner.next().unwrap().as_rule(), Rule::sugar_tuple);
+}
+
+#[test]
 fn test_tuple_empty() {
     let parsed = ElixirParser::parse(Rule::tuple, "{}")
         .expect("Parse error")
@@ -228,4 +243,24 @@ fn test_tuple_multiple_elements() {
     let mut inner = parsed.into_inner();
     assert_eq!(inner.next().unwrap().as_rule(), Rule::integer);
     assert_eq!(inner.next().unwrap().as_rule(), Rule::atom);
+}
+
+#[test]
+fn test_map() {
+    let quoted = quote_string("%{foo: 5}").expect("Quote error");
+    let parsed = ElixirParser::parse(Rule::expr, &quoted)
+        .expect("Parse error")
+        .next()
+        .unwrap();
+    assert_eq!(parsed.as_rule(), Rule::tuple);
+    assert_eq!(parsed.as_str(), "{:%{}, [line: 1], [foo: 5]}");
+}
+
+#[test]
+fn test_failure() {
+    let parsed = ElixirParser::parse(Rule::expr, "{:%{}, [line: 11], [path: \"bad_filename\"]}")
+        .expect("Parse error")
+        .next()
+        .unwrap();
+    assert_eq!(parsed.as_rule(), Rule::tuple);
 }

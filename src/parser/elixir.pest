@@ -1,9 +1,9 @@
 WHITESPACE = _{ " " | "\n" | "\r" | "\t" }
 
-file = { defmodule }
-defmodule = { "{" ~ ":defmodule" ~ "," ~ "[" }
+file = { SOI ~ expr ~ EOI }
+// defmodule = { "{" ~ ":defmodule" ~ "," ~ "[" }
 
-expr = _{ integer | float | atom | list | tuple }
+expr = _{ integer | float | atom | binary | list | tuple }
 
 
 // numbers
@@ -17,44 +17,44 @@ binary_inner = @{ non_quote_char* }
 
 
 // atoms
-atom = ${ atom_literal | atom_undocumented | atom_unquoted | atom_quoted }
+atom = ${ atom_literal | ":" ~ atom_identifier }
 atom_literal = { "true" | "false" | "nil" | "Kernel" | "Access" }
+atom_identifier = { atom_undocumented | atom_unquoted | atom_quoted }
 atom_undocumented = {
-    ":!"
-    | ":@"
-    | ":%"
-    | ":^"
-    | ":&"
-    | ":*"
-    | ":+"
-    | ":="
-    | ":-"
-    | ":/"
-    | ":|"
-    | ":<"
-    | ":>"
-    | ":."
-    | ":<>"
-    | ":<<>>"
-    | ":{}"
-    | ":++"
-    | ":||"
-    | ":&&"
-    | ":=="
-    | ":--"
-    | ":&&"
-    | ":\\\\"
+    "<>"
+    | "<<>>"
+    | "{}"
+    | "++"
+    | "||"
+    | "&&"
+    | "=="
+    | "--"
+    | "&&"
+    | "\\\\"
+    | "%{}"
+    | "!"
+    | "@"
+    | "%"
+    | "^"
+    | "&"
+    | "*"
+    | "+"
+    | "="
+    | "-"
+    | "/"
+    | "|"
+    | "<"
+    | ">"
+    | "."
 }
-atom_unquoted = ${
-    ":" ~ (LETTER | "_") ~ (LETTER | NUMBER | "_" | "@")* ~ ("!" | "?")?
-}
-atom_quoted = ${
-    ":" ~ "\"" ~ non_quote_char* ~ "\""
-}
+atom_unquoted = ${ (LETTER | "_") ~ (LETTER | NUMBER | "_" | "@")* ~ ("!" | "?")? }
+atom_quoted = ${ "\"" ~ non_quote_char* ~ "\"" }
 
 
 // lists
-list = { "[" ~ (expr ~ ",")* ~ expr? ~ "]" }
+list = { "[" ~ ((expr | sugar_tuple) ~ ",")* ~ (expr | sugar_tuple)? ~ "]" }
+sugar_tuple = { backwards_atom ~ expr }
+backwards_atom = @{ atom_identifier ~ ":" }
 
 
 // tuples
