@@ -1,0 +1,68 @@
+WHITESPACE = _{ " " | "\n" | "\r" | "\t" }
+
+file = { defmodule }
+defmodule = { "{" ~ ":defmodule" ~ "," ~ "[" }
+
+expr = _{ integer | float | atom | list | tuple }
+
+
+// numbers
+integer = { ASCII_DIGIT+ }
+float = { ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT+ }
+
+
+// binaries (aka strings)
+binary = ${ "\"" ~ binary_inner ~ "\"" }
+binary_inner = @{ non_quote_char* }
+
+
+// atoms
+atom = ${ atom_literal | atom_undocumented | atom_unquoted | atom_quoted }
+atom_literal = { "true" | "false" | "nil" | "Kernel" | "Access" }
+atom_undocumented = {
+    ":!"
+    | ":@"
+    | ":%"
+    | ":^"
+    | ":&"
+    | ":*"
+    | ":+"
+    | ":="
+    | ":-"
+    | ":/"
+    | ":|"
+    | ":<"
+    | ":>"
+    | ":."
+    | ":<>"
+    | ":<<>>"
+    | ":{}"
+    | ":++"
+    | ":||"
+    | ":&&"
+    | ":=="
+    | ":--"
+    | ":&&"
+    | ":\\\\"
+}
+atom_unquoted = ${
+    ":" ~ (LETTER | "_") ~ (LETTER | NUMBER | "_" | "@")* ~ ("!" | "?")?
+}
+atom_quoted = ${
+    ":" ~ "\"" ~ non_quote_char* ~ "\""
+}
+
+
+// lists
+list = { "[" ~ (expr ~ ",")* ~ expr? ~ "]" }
+
+
+// tuples
+tuple = { "{" ~ (expr ~ ",")* ~ expr? ~ "}" }
+
+
+// helpers
+non_quote_char = {
+    !("\"" | "\\") ~ ANY
+    | "\\" ~ "\""
+}

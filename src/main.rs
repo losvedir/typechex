@@ -1,7 +1,8 @@
+extern crate pest;
 #[macro_use]
-extern crate lalrpop_util;
+extern crate pest_derive;
+
 use std::env;
-mod error;
 mod parser;
 
 fn main() {

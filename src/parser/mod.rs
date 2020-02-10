@@ -1,6 +1,4 @@
-pub mod ast;
-pub mod lexer;
-use crate::error::Error;
+use std::error::Error;
 use std::process::Command;
 
 #[cfg(test)]
@@ -8,12 +6,23 @@ use std::io::Write;
 #[cfg(test)]
 use std::process::Stdio;
 
-lalrpop_mod!(pub elixir, "/parser/elixir.rs");
+use pest::Parser;
 
-fn parse_quoted(quoted: &str) -> Result<Vec<ast::Expr>, Error> {
-    let lexer = lexer::Lexer::new(quoted);
-    let parser = elixir::TopParser::new();
-    Ok(parser.parse(lexer)?)
+#[derive(Parser)]
+#[grammar = "parser/elixir.pest"]
+pub struct ElixirParser;
+
+fn parse_quoted(quoted: &str) -> Result<(), ()> {
+    match ElixirParser::parse(Rule::file, quoted) {
+        Ok(res) => {
+            dbg!(&res);
+            Ok(())
+        }
+        Err(e) => {
+            dbg!(&e);
+            Err(())
+        }
+    }
 }
 
 pub fn parse_files(filename: &str) {
@@ -40,7 +49,7 @@ pub fn parse_files(filename: &str) {
     }
 }
 
-fn quote_files(filename: &str) -> Result<String, Error> {
+fn quote_files(filename: &str) -> Result<String, Box<dyn Error>> {
     let output = Command::new("elixir")
         .args(&["quote_dir.exs", filename])
         .output()?;
@@ -50,7 +59,7 @@ fn quote_files(filename: &str) -> Result<String, Error> {
 }
 
 #[cfg(test)]
-fn quote_string(code: &str) -> Result<String, Box<dyn std::error::Error>> {
+fn quote_string(code: &str) -> Result<String, Box<dyn Error>> {
     let mut child = Command::new("elixir")
         .args(&["quote_str.exs"])
         .stdin(Stdio::piped())
@@ -68,16 +77,155 @@ fn quote_string(code: &str) -> Result<String, Box<dyn std::error::Error>> {
 }
 
 #[test]
-fn calculator1() {
-    let lexer = lexer::Lexer::new("{}");
-    assert_eq!(
-        elixir::ExprParser::new().parse(lexer),
-        Ok(ast::Expr::Tuple { exprs: vec![] })
-    );
-}
-
-#[test]
 fn test_quote_string() {
     let quoted = quote_string(":foo").expect("Failed to quote");
     assert_eq!(quoted, ":foo\n");
+}
+
+#[test]
+fn test_integers() {
+    let quoted = quote_string("100_000").expect("Quote error");
+    let parsed = ElixirParser::parse(Rule::integer, &quoted)
+        .expect("Parse error")
+        .next()
+        .unwrap();
+    assert_eq!(parsed.as_rule(), Rule::integer);
+    assert_eq!(parsed.as_str(), "100000");
+}
+
+#[test]
+fn test_floats() {
+    let quoted = quote_string("100.0001").expect("Quote error");
+    let parsed = ElixirParser::parse(Rule::float, &quoted)
+        .expect("Parse error")
+        .next()
+        .unwrap();
+    assert_eq!(parsed.as_rule(), Rule::float);
+    assert_eq!(parsed.as_str(), "100.0001");
+}
+
+#[test]
+fn test_binaries1() {
+    let quoted = quote_string("\"I am a binary with spaces and such.\"").expect("Quote error");
+    let parsed = ElixirParser::parse(Rule::binary, &quoted)
+        .expect("Parse error")
+        .next()
+        .unwrap();
+    assert_eq!(parsed.as_rule(), Rule::binary);
+    assert_eq!(parsed.as_str(), "\"I am a binary with spaces and such.\"")
+}
+
+#[test]
+fn test_binaries2() {
+    let quoted = quote_string("\"Escaped \\\" within\"").expect("Quote error");
+    let parsed = ElixirParser::parse(Rule::binary, &quoted)
+        .expect("Parse error")
+        .next()
+        .unwrap();
+    assert_eq!(parsed.as_rule(), Rule::binary);
+    assert_eq!(parsed.as_str(), "\"Escaped \\\" within\"");
+}
+
+#[test]
+fn test_atoms1() {
+    let quoted = quote_string(":foo").expect("Quote error");
+    let parsed = ElixirParser::parse(Rule::atom, &quoted)
+        .expect("Parse error")
+        .next()
+        .unwrap();
+    assert_eq!(parsed.as_rule(), Rule::atom);
+    assert_eq!(parsed.as_str(), ":foo")
+}
+
+#[test]
+fn test_atoms2() {
+    let quoted = quote_string(":\"f oo\"").expect("Quote error");
+    let parsed = ElixirParser::parse(Rule::atom, &quoted)
+        .expect("Parse error")
+        .next()
+        .unwrap();
+    assert_eq!(parsed.as_rule(), Rule::atom);
+    assert_eq!(parsed.as_str(), ":\"f oo\"")
+}
+
+#[test]
+fn test_atoms3() {
+    let quoted = quote_string(":{}").expect("Quote error");
+    let parsed = ElixirParser::parse(Rule::atom, &quoted)
+        .expect("Parse error")
+        .next()
+        .unwrap();
+    assert_eq!(parsed.as_rule(), Rule::atom);
+    assert_eq!(parsed.as_str(), ":{}")
+}
+
+#[test]
+fn test_list_empty() {
+    let quoted = quote_string("[]").expect("Quote error");
+    let parsed = ElixirParser::parse(Rule::list, &quoted)
+        .expect("Parse error")
+        .next()
+        .unwrap();
+    assert_eq!(parsed.as_rule(), Rule::list);
+    assert_eq!(parsed.as_str(), "[]")
+}
+
+#[test]
+fn test_list_one_element() {
+    let quoted = quote_string("[5]").expect("Quote error");
+    let parsed = ElixirParser::parse(Rule::list, &quoted)
+        .expect("Parse error")
+        .next()
+        .unwrap();
+    assert_eq!(parsed.as_rule(), Rule::list);
+    assert_eq!(parsed.as_str(), "[5]");
+    assert_eq!(parsed.into_inner().next().unwrap().as_rule(), Rule::integer);
+}
+
+#[test]
+fn test_list_multiple_elements() {
+    let quoted = quote_string("[5, :foo]").expect("Quote error");
+    let parsed = ElixirParser::parse(Rule::list, &quoted)
+        .expect("Parse error")
+        .next()
+        .unwrap();
+    assert_eq!(parsed.as_rule(), Rule::list);
+    assert_eq!(parsed.as_str(), "[5, :foo]");
+    let mut inner = parsed.into_inner();
+    assert_eq!(inner.next().unwrap().as_rule(), Rule::integer);
+    assert_eq!(inner.next().unwrap().as_rule(), Rule::atom);
+}
+
+#[test]
+fn test_tuple_empty() {
+    let parsed = ElixirParser::parse(Rule::tuple, "{}")
+        .expect("Parse error")
+        .next()
+        .unwrap();
+    assert_eq!(parsed.as_rule(), Rule::tuple);
+    assert_eq!(parsed.as_str(), "{}")
+}
+
+#[test]
+fn test_tuple_one_element() {
+    let parsed = ElixirParser::parse(Rule::tuple, "{5}")
+        .expect("Parse error")
+        .next()
+        .unwrap();
+    assert_eq!(parsed.as_rule(), Rule::tuple);
+    assert_eq!(parsed.as_str(), "{5}");
+    assert_eq!(parsed.into_inner().next().unwrap().as_rule(), Rule::integer);
+}
+
+#[test]
+fn test_tuple_multiple_elements() {
+    let parsed = ElixirParser::parse(Rule::tuple, "{5, :foo}")
+        .expect("Parse error")
+        .next()
+        .unwrap();
+    assert_eq!(parsed.as_rule(), Rule::tuple);
+    assert_eq!(parsed.as_str(), "{5, :foo}");
+    let mut inner = parsed.into_inner();
+    assert_eq!(inner.next().unwrap().as_rule(), Rule::integer);
+    assert_eq!(inner.next().unwrap().as_rule(), Rule::atom);
 }
