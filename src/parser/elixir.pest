@@ -3,7 +3,7 @@ WHITESPACE = _{ " " | "\n" | "\r" | "\t" }
 file = { SOI ~ expr ~ EOI }
 // defmodule = { "{" ~ ":defmodule" ~ "," ~ "[" }
 
-expr = _{ integer | float | atom | binary | list | tuple }
+expr = _{ float | integer | atom | binary | list | tuple }
 
 
 // numbers
@@ -52,7 +52,7 @@ atom_quoted = ${ "\"" ~ non_quote_char* ~ "\"" }
 
 
 // lists
-list = { "[" ~ ((expr | sugar_tuple) ~ ",")* ~ (expr | sugar_tuple)? ~ "]" }
+list = { "[" ~ ((sugar_tuple | expr) ~ ",")* ~ (sugar_tuple | expr)? ~ "]" }
 sugar_tuple = { backwards_atom ~ expr }
 backwards_atom = @{ atom_identifier ~ ":" }
 
