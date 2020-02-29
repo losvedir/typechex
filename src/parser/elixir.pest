@@ -1,8 +1,6 @@
 WHITESPACE = _{ " " | "\n" | "\r" | "\t" }
 
 file = { SOI ~ expr ~ EOI }
-// defmodule = { "{" ~ ":defmodule" ~ "," ~ "[" }
-
 expr = _{ float | integer | atom | binary | list | tuple }
 
 
@@ -28,10 +26,19 @@ atom_undocumented = {
     | "||"
     | "&&"
     | "=="
+    | "!="
+    | "<="
+    | ">="
+    | "=~"
     | "--"
     | "&&"
     | "\\\\"
     | "%{}"
+    | "->"
+    | "<-"
+    | "|>"
+    | "..."
+    | ".."
     | "!"
     | "@"
     | "%"
@@ -52,17 +59,17 @@ atom_quoted = ${ "\"" ~ non_quote_char* ~ "\"" }
 
 
 // lists
-list = { "[" ~ ((sugar_tuple | expr) ~ ",")* ~ (sugar_tuple | expr)? ~ "]" }
+list = { "[]" | "[" ~ (sugar_tuple | expr) ~ ("," ~ (sugar_tuple | expr))* ~ "]" }
 sugar_tuple = { backwards_atom ~ expr }
 backwards_atom = @{ atom_identifier ~ ":" }
 
 
 // tuples
-tuple = { "{" ~ (expr ~ ",")* ~ expr? ~ "}" }
+tuple = { "{}" | "{" ~ expr ~ ("," ~ expr)* ~ "}" }
 
 
 // helpers
 non_quote_char = {
-    !("\"" | "\\") ~ ANY
-    | "\\" ~ "\""
+    "\\" ~ "\""
+    | !"\"" ~ ANY
 }

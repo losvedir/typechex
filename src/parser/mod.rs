@@ -17,7 +17,6 @@ fn parse_quoted(quoted: &str) -> Result<(), ()> {
         Ok(_res) => Ok(()),
         Err(e) => {
             dbg!(&e);
-            dbg!(&quoted);
             Err(())
         }
     }
@@ -94,6 +93,8 @@ fn test_simple_exprs() {
         ("{5, :foo}", Rule::tuple),
         ("{:%{}, [line: 1], [foo: 5]}", Rule::tuple),
         ("{:%{}, [line: 11], [path: \"bad_filename\"]}", Rule::tuple),
+        ("[\"abcd\\nefgh.\\n\"]", Rule::list),
+        (r#"[" \"foo\" "]"#, Rule::list),
     ];
 
     for (expr, rule) in exprs {
