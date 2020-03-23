@@ -6,12 +6,30 @@ The goal of this project is to be an Elixir typechecker that's stronger than dia
 
 `$ cargo run /path/to/elixir/project/lib`
 
+## Design
+
+Use the `@spec` and `@type` definitions already found in codebases.
+
+Like rust I expect types to be defined at function boundaries. The typechecker will be responsible for ensuring that the function definition agrees with the spec, and then typechecking at the callsite involves verification against the spec only.
+
+The most important thing to check is exhaustiveness. If a function spec says it takes `String.t() | nil` then the function body should handle at least those cases. The type must be narrowed, e.g., `if not is_nil(foo) do .... end` before it's allowed to treated as a `String.t()`. Conversely, if a function can return a variety of types, then the spec is required to enumerate at least all of them.
+
+It should be gradually typed. A user should be able to run `typechex` on a codebase with no specs (and not catch anything), and gradually add specs to gradually have more safety.
+
+Initial thoughts on how to handle functions without specs: since the plan is for callsites to rely exclusively on specs, what happens if there is no spec? I can initially think of three options:
+
+1. Not allow it. Raise an error. Require all functions to be spec'ed for typechex to operate.
+2. Treat it as an `any()`. The functions will have to handle every type (e.g. with a catch-all `def foo(_)` clause), and use guards and other type narrowing measures before treating it as a specific type.
+3. Don't typecheck it. Callsites can pass any value into it. The return value is whatever makes the calling function agree with its spec.
+
+I think I want to go with approach (3). Although it seems weak, I can't see how the other two could work with gradual specs.
 
 ## Comparison to dialyzer and other type systems
 
 Dialyzer reading list:
 
 * [Initial paper (pdf)](https://www.it.uu.se/research/group/hipe/dialyzer/publications/succ_types.pdf) - Introduces theoretical foundation of dialyzer, "success typings", which is essentially that dialyzer should never have false negatives.
+* [Fast and Precise Type Checking for Javascript](https://arxiv.org/pdf/1708.08021.pdf) - Flow's approach.
 
 # Limitations of dialyzer
 
